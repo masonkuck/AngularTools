@@ -9,7 +9,7 @@ You can access that via `start $PROFILE` inside of a powershell window.
 
 # Available Scripts
 
-## Angular Split File (AngularSplitFile)
+## Angular Split File (Angular-Split-File)
 This function is intended to split inline component files out into folder organized template and component files. It doesn't do everything needed and it is not particularly optimized but its not inteded to be used that often. I wrote this to clean up an existing massive angular project that already had pretty heavy linting but almost ever file was inline component files. IMO this is ok for small components but if you are writing pages like that it is unmanageable. Use this to do 90% of the repeatative work.
 
 ### Features:
