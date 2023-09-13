@@ -1,5 +1,5 @@
 # Split inline component files into a new directory and individual files.
-Function Split-Angular-File ($path, [bool]$skipWarning = $false, [bool]$verbose = $false) { 
+Function Angular-Spli-File ($path, [bool]$skipWarning = $false, [bool]$verbose = $false) { 
     # Bootstrap
     if ($path -eq 0) {
         Write-Host "First parameter must be a path" -ForegroundColor Red
