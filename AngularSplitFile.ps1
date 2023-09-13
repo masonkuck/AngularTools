@@ -1,9 +1,9 @@
 # Split inline component files into a new directory and individual files.
-Function Angular-Split-File ($path, [bool]$skipWarning = $false, [bool]$verbose = $false) { 
+Function Split-Angular-File ($path, [bool]$skipWarning = $false, [bool]$verbose = $false) { 
     # Bootstrap
     if ($path -eq 0) {
         Write-Host "First parameter must be a path" -ForegroundColor Red
-        Write-Host
+        Write-Host "`n"
         return
     }
 
@@ -26,24 +26,23 @@ Function Angular-Split-File ($path, [bool]$skipWarning = $false, [bool]$verbose 
     $newComponent = "$newFolder\$filePrefix.component.ts"
     $newTemplate = "$newFolder\$filePrefix.component.html"
 
-    $moduleFile = Get-ChildItem $folderPath -Filter *.module.ts | Select-Object -First 1
-    $moduleFile = $moduleFile.NameString
-    $moduleFilePath = "$folderPath\$moduleFile";
-
     # Load File
     if (!(Test-Path $filePath -PathType Leaf)) {
-        Write-Host "No Component File Found... Searched for the following: $filePath"  -ForegroundColor Red
-        Write-Host
+        Write-Host "No Component File Found... Searched for the following: $filePath"  -ForegroundColor Yellow
+        Write-Host "`n"
         return
     }
 
     [string]$fileContents = (Get-Content $filePath) -join "`n"
 
     if (!($fileContents.Contains("template:"))) {
-        Write-Host "No template found within the Component File." -ForegroundColor Red
+        Write-Host "No template found within the Component File: $filePath" -ForegroundColor Red
         return;
     }
 
+    Write-Host "Processing component file $path"
+    Write-Host "`n"
+    
     $templateData = $fileContents.Split('`')[1]
     $fileContents = $fileContents.Replace($templateData, "")
     $fileContents = $fileContents.Replace("template: ````", "templateUrl: ""$filePrefix.component.html""")
@@ -54,20 +53,20 @@ Function Angular-Split-File ($path, [bool]$skipWarning = $false, [bool]$verbose 
     if (!(Test-Path $newFolder -PathType Container)) {
         New-Item -ItemType Directory -Path $newFolder
         Write-Host "Created new Directory file $newComponent" -ForegroundColor Green
-        Write-Host 
+        Write-Host "`n" 
     } else {
         Write-Host "New Directory already exists" -ForegroundColor Yellow
-        Write-Host 
+        Write-Host "`n"
     }
 
     # Create New File(s)
     Set-Content -path $newComponent -Value $fileContents
     Write-Host "Created new Component file $newComponent" -ForegroundColor Green
-    Write-Host 
+    Write-Host "`n"
 
     Set-Content -path $newTemplate -Value $templateData
     Write-Host "Created new Template file $newTemplate" -ForegroundColor Green
-    Write-Host 
+    Write-Host "`n"
 
     # Format Template File to remove extra whitespace
     $templateData = Get-Content $newTemplate
@@ -85,7 +84,7 @@ Function Angular-Split-File ($path, [bool]$skipWarning = $false, [bool]$verbose 
 
     Set-Content -path $newTemplate -Value $templateData
 
-    # UPDATE MODULE IMPORT STATEMENTS WITH BETTER RELATIVE PATHS
+    # Update module import statements with better relative paths
     $newPath = Get-ChildItem $newComponent
     
     $fileList = Get-ChildItem -Filter *.ts -Recurse | Where-Object { $_.fullName -notlike "*node_modules*" }
@@ -93,7 +92,7 @@ Function Angular-Split-File ($path, [bool]$skipWarning = $false, [bool]$verbose 
         $moduleContent = Get-Content $_.fullName -Raw
         $moduleContent = $moduleContent.SubString(0, $moduleContent.Length - 1)
 
-        cd $_.directory.fullName
+        Set-Location $_.directory.fullName
         $relativeOldPath = Resolve-Path $filePath -Relative 
         $relativeNewPath = Resolve-Path $newPath.fullName -Relative 
 
@@ -110,18 +109,22 @@ Function Angular-Split-File ($path, [bool]$skipWarning = $false, [bool]$verbose 
         $newModuleContent = $moduleContent.Replace("from ""$relativeOldPath""", "from ""$relativeNewPath""")
         if ($newModuleContent -ne $moduleContent) {
             Write-Host "Updated Module File References $($_.fullName)" -ForegroundColor Green
-            Write-Host 
+            Write-Host "`n"
             Set-Content -path $_.fullName -value $newModuleContent.SubString(0, $newModuleContent.Length - 1)
         }
     }
 
     # Return to original path
-    cd $originalPath
+    Set-Location $originalPath
 
     # Remove content from old file.
     Remove-Item -Path $filePath
     Write-Host "Removed Original Component File $filePath" -ForegroundColor Green
-    Write-Host 
-    Write-Host "Ensure that you build and test all generated changes. Template Files may need to be formatted. You may need to manually create style files." -ForegroundColor DarkYellow
+    Write-Host "`n"
+ 
+    if (!$skipWarning) {
+        Write-Host "Ensure that you build and test all generated changes. Template Files may need to be formatted. You may need to manually create style files." -ForegroundColor DarkYellow
+        Write-Host "`n"
+    }
 
 }
